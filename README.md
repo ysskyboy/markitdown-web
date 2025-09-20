@@ -1,5 +1,7 @@
 # MarkItDown
 
+![MarkItDown Logo](https://github.com/ysskyboy/markitdown-web/blob/main/markitdown.jpg)
+
 [![PyPI](https://img.shields.io/pypi/v/markitdown.svg)](https://pypi.org/project/markitdown/)
 ![PyPI - Downloads](https://img.shields.io/pypi/dd/markitdown)
 [![Built by AutoGen Team](https://img.shields.io/badge/Built%20by-AutoGen%20Team-blue)](https://github.com/microsoft/autogen)
@@ -175,6 +177,43 @@ md = MarkItDown(llm_client=client, llm_model="gpt-4o", llm_prompt="optional cust
 result = md.convert("example.jpg")
 print(result.text_content)
 ```
+
+### Web Interface
+
+MarkItDown also provides a simple web interface for easy file conversion through a browser. This interface is available in the `web_app` directory.
+
+#### Features
+- Convert PDF, Word, Excel, PowerPoint, Images, and more to Markdown
+- Drag and drop file upload
+- Copy to clipboard functionality
+- Responsive design
+
+#### Installation
+
+1. Navigate to the web_app directory:
+   ```bash
+   cd web_app
+   ```
+
+2. Install the required dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+#### Usage
+
+1. Start the Flask application:
+   ```bash
+   python app.py
+   ```
+
+2. Open your web browser and go to `http://localhost:5000`
+
+3. Upload a document file using the interface
+
+4. Click "Convert to Markdown" to convert the file
+
+5. View the resulting Markdown in the text area and copy it to your clipboard if needed
 
 ### Docker
 
