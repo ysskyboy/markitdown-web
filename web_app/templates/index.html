@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarkItDown - Document to Markdown Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #e3f2fd;
+        }
+        .file-input {
+            display: none;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .result-container {
+            margin-top: 30px;
+        }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        textarea {
+            width: 100%;
+            height: 400px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MarkItDown - Document to Markdown Converter</h1>
+        <p style="text-align: center; color: #666;">Convert various document formats to Markdown</p>
+
+        <div class="upload-area" id="uploadArea">
+            <p>Drag & drop your file here or click to browse</p>
+            <p style="font-size: 14px; color: #888;">Supports PDF, Word, Excel, PowerPoint, Images, and more</p>
+            <button class="btn" id="browseBtn">Browse Files</button>
+            <input type="file" class="file-input" id="fileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.xml,.html,.jpg,.jpeg,.png,.gif,.bmp,.mp3,.wav,.zip">
+        </div>
+
+        <div style="text-align: center; margin: 20px 0;">
+            <button class="btn" id="convertBtn" disabled>Convert to Markdown</button>
+        </div>
+
+        <div id="messageArea"></div>
+
+        <div class="result-container" id="resultContainer" style="display: none;">
+            <div class="result-header">
+                <h2>Conversion Result</h2>
+                <button class="btn" id="copyBtn">Copy to Clipboard</button>
+            </div>
+            <textarea id="resultText" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const browseBtn = document.getElementById('browseBtn');
+        const convertBtn = document.getElementById('convertBtn');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultText = document.getElementById('resultText');
+        const copyBtn = document.getElementById('copyBtn');
+        const messageArea = document.getElementById('messageArea');
+
+        let selectedFile = null;
+
+        // Event listeners
+        browseBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+        convertBtn.addEventListener('click', convertFile);
+        copyBtn.addEventListener('click', copyToClipboard);
+
+        function handleFileSelect(e) {
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                updateUI();
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+
+            if (e.dataTransfer.files.length > 0) {
+                selectedFile = e.dataTransfer.files[0];
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            if (selectedFile) {
+                uploadArea.innerHTML = `
+                    <p>Selected file: ${selectedFile.name}</p>
+                    <p>Size: ${(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <button class="btn" id="browseBtn">Change File</button>
+                    <input type="file" class="file-input" id="fileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.xml,.html,.jpg,.jpeg,.png,.gif,.bmp,.mp3,.wav,.zip">
+                `;
+                document.getElementById('browseBtn').addEventListener('click', () => fileInput.click());
+                document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+                convertBtn.disabled = false;
+            } else {
+                uploadArea.innerHTML = `
+                    <p>Drag & drop your file here or click to browse</p>
+                    <p style="font-size: 14px; color: #888;">Supports PDF, Word, Excel, PowerPoint, Images, and more</p>
+                    <button class="btn" id="browseBtn">Browse Files</button>
+                    <input type="file" class="file-input" id="fileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.xml,.html,.jpg,.jpeg,.png,.gif,.bmp,.mp3,.wav,.zip">
+                `;
+                document.getElementById('browseBtn').addEventListener('click', () => fileInput.click());
+                document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+                convertBtn.disabled = true;
+            }
+        }
+
+        async function convertFile() {
+            if (!selectedFile) return;
+
+            // Show loading message
+            showMessage('Converting file... Please wait.', 'loading');
+            convertBtn.disabled = true;
+
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                const response = await fetch('/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Show success message
+                    showMessage('Conversion successful!', 'success');
+
+                    // Display result
+                    resultText.value = data.markdown;
+                    resultContainer.style.display = 'block';
+
+                    // Scroll to result
+                    resultContainer.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    showMessage(`Error: ${data.error}`, 'error');
+                    resultContainer.style.display = 'none';
+                }
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+                resultContainer.style.display = 'none';
+            } finally {
+                convertBtn.disabled = false;
+            }
+        }
+
+        function copyToClipboard() {
+            resultText.select();
+            document.execCommand('copy');
+
+            // Show feedback
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+            }, 2000);
+        }
+
+        function showMessage(message, type) {
+            messageArea.innerHTML = '';
+
+            if (type === 'loading') {
+                messageArea.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>${message}</p>
+                    </div>
+                `;
+            } else {
+                const div = document.createElement('div');
+                div.className = type;
+                div.textContent = message;
+                messageArea.appendChild(div);
+            }
+        }
+    </script>
+</body>
+</html>
